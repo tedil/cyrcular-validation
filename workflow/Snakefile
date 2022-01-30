@@ -1,0 +1,78 @@
+from snakemake.utils import min_version
+
+min_version("6.15")
+
+
+configfile: "config/config.yaml"
+configfile: "config/simulation/config.yaml"
+configfile: "config/calling/config.yaml"
+
+
+include: "rules/validation.smk"
+
+
+models = [config["simulation"]["error_model"]["name"]]
+
+
+rule all:
+    input:
+        expand(
+            "results/calling/tables/{model}_{coverage}.sorted.csv",
+            model=models,
+            coverage=config["simulation"]["target_coverages"],
+        ),
+        expand(
+            "results/validation/stats/{model}/{coverage}.tsv",
+            model=models,
+            coverage=config["simulation"]["target_coverages"],
+        ),
+        expand(
+            "results/validation/plots/{model}.{nr}.{ext}",
+            model=models,
+            nr=[2],
+            ext=["svg", "pdf"],
+        ),
+
+
+module simulation:
+    snakefile:
+        github(
+            "tedil/cyrcular-simulation",
+            path="workflow/Snakefile",
+            commit="ccee1008bd7afcbe0457dec8d6e68ec0bfbab18d",
+        )
+    config:
+        {"simulation": config["simulation"]}
+
+
+use rule * from simulation as simulation_*
+
+
+import os
+
+os.makedirs("results/calling/config/", exist_ok=True)
+simulation.samples.to_csv("results/calling/config/samples.tsv", sep="\t")
+simulation.units.to_csv("results/calling/config/units.tsv", sep="\t")
+
+config["calling"]["samples"] = "results/calling/config/samples.tsv"
+config["calling"]["units"] = "results/calling/config/units.tsv"
+
+
+module calling:
+    snakefile:
+        github(
+            "tedil/cyrcular-calling",
+            path="workflow/Snakefile",
+            commit="91dcddf38dc95076d5c3a6278db92e143e437dfb",
+        )
+    config:
+        {"calling": config["calling"]}
+
+
+use rule * from calling as calling_*
+
+
+use rule vembrane_table from calling as calling_vembrane_table with:
+    params:
+        expression='INFO["EVENT"], ID, CHROM, POS, ALT, 0, 0, INFO["NUM_EXONS"], ";".join(INFO["GENES"] or []), 0, INFO["PROB_PRESENT"], INFO["PROB_ABSENT"], INFO["PROB_ARTIFACT"]',
+        extra='--header "EVENT, ID, CHROM, POS, ALT, circle_length, num_segments, NUM_EXONS, GENES, split_reads, PROB_PRESENT, PROB_ABSENT, PROB_ARTIFACT"',
