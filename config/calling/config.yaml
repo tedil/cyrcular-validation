@@ -1,0 +1,32 @@
+calling:
+  samples: config/samples.tsv
+  units: config/units.tsv
+
+  reference: &ref
+    name: "genome"
+
+    path: "resources/genome.fasta"
+
+    # Number of chromosomes to consider for calling.
+    # The first n entries of the FASTA will be considered.
+    n_chromosomes: 25
+    # Ensembl species name
+    species: homo_sapiens
+    # Ensembl release
+    release: 100
+    # Genome build
+    build: GRCh38
+
+  min_read_depth: 4
+  min_split_reads: 5
+  max_paths_per_component: 15
+  max_deletion_length: 10000
+
+  filter:
+    fdr-control:
+      threshold: 1.0
+      local: true
+      events:
+        circular:
+          varlociraptor:
+            - present

@@ -1,0 +1,9 @@
+validation:
+  filter:
+    fdr-control:
+      threshold: 1.0
+      local: true
+      events:
+        circular:
+          varlociraptor:
+            - present
