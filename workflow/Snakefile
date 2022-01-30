@@ -39,7 +39,7 @@ module simulation:
         github(
             "tedil/cyrcular-simulation",
             path="workflow/Snakefile",
-            commit="ccee1008bd7afcbe0457dec8d6e68ec0bfbab18d",
+            commit="421672ee6afcc8c152f78edc840168cece138a7a",
         )
     config:
         {"simulation": config["simulation"]}
